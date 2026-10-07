@@ -26,6 +26,7 @@ const User = require("./model/User");
 const server = http.createServer(app);
 const allowedOrigins = [
   "https://counsel-x-4wvg.onrender.com",
+  "https://counsellingx.netlify.app",
   // "http://localhost:5173",
   // "http://localhost:5174",
   // "http://localhost:3000",
