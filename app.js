@@ -10,7 +10,7 @@ const path = require("path");
 let client = require("./utils/redisDatabase");
 // const authentication = require("./middleware/authentication").authentication
 const counselorRoute = require("./router/counselor");
-const authRoute = require("./router/auth"); 
+const authRoute = require("./router/auth");
 const messageRoute = require("./router/message");
 const profileRoute = require("./router/profile");
 const userStatusRoute = require("./router/userStatus");
@@ -25,20 +25,20 @@ const Notification = require("./model/Notification");
 const User = require("./model/User");
 const server = http.createServer(app);
 const allowedOrigins = [
-  "https://counselling-app-ki9p.onrender.com",
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-  "http://127.0.0.1:3000",
+  "https://counsel-x-4wvg.onrender.com",
+  // "http://localhost:5173",
+  // "http://localhost:5174",
+  // "http://localhost:3000",
+  // "http://127.0.0.1:5173",
+  // "http://127.0.0.1:5174",
+  // "http://127.0.0.1:3000",
 ];
 if (process.env.FRONTEND_URL) {
   allowedOrigins.push(...process.env.FRONTEND_URL.split(','));
 }
 
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
+// const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 
@@ -49,11 +49,11 @@ const corsOptions = {
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
-      callback(new Error("Not allowed by CORS")); 
+      callback(new Error("Not allowed by CORS"));
     }
   },
   methods: ["GET", "POST", "DELETE", "PUT", "PATCH"],
-  credentials: true, 
+  credentials: true,
 };
 
 // Socket.IO CORS config (must include all allowed origins explicitly)
@@ -67,7 +67,7 @@ const socketCorsOptions = {
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
-app.set('trust proxy', 1); 
+app.set('trust proxy', 1);
 app.use(mongoSanitize());
 app.use(xss());
 
@@ -283,7 +283,7 @@ const { initAdmin } = require("./utils/initAdmin");
 
 mongoose.connect(process.env.MONGODB_STRING).then(async () => {
   console.log("✅ MongoDB connected successfully!");
-  
+
   // Auto-initialize Admin
   await initAdmin();
 
