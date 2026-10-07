@@ -85,7 +85,6 @@ exports.postLogin = async (req, res) => {
 exports.postRegister = async (req, res, next) => {
   try {
     const { role, personalInfo } = req.body.registerUser;
-    const isDev = process.env.NODE_ENV === "development" && (!process.env.EMAIL || !process.env.G_PASS);
     if (role === "counselor") {
       const { education, payment, counseling } = req.body.registerUser;
       const filePath = req.files?.file?.[0]?.filename;
@@ -106,88 +105,61 @@ exports.postRegister = async (req, res, next) => {
           .json({ message: "User already exist", success: false });
       }
 
-      // In development, auto-verify without email so local testing can proceed
-      if (isDev) {
-        const bcryptPassword = await bcryptjs.hash(personalInfo.password, 12);
-        personalInfo.password = bcryptPassword;
-        delete personalInfo.confirmPassword;
-
-        const counselorProfile = new CounselorProfileSchema({
-          education,
-          payment,
-          file: filePath,
-        });
-        await counselorProfile.save();
-
-        const userDoc = new UserSchema({
-          personalInfo,
-          profile: "dummyImage.png",
-          role,
-          friends: [],
-          counselor: counselorProfile._id,
-        });
-        const user = await userDoc.save();
-
-        if (counseling) {
-          const counselingDoc = new CreateCounselingSchema({
-            counselorId: user._id,
-            category: counseling.category,
-            duration: counseling.duration,
-            price: counseling.price,
-          });
-          await counselingDoc.save();
-          user.counseling = counselingDoc._id;
-          await user.save();
-        }
-
-        const token = jwt.sign(
-          {
-            name: personalInfo.name,
-            email: personalInfo.email,
-            userId: user._id,
-            role,
-            isLoggedIn: true,
-          },
-          process.env.JWT_SECRET_KEY,
-          { expiresIn: 2700 }
-        );
-
-        await client.set(
-          token,
-          JSON.stringify({ userId: user._id, userData: user, token: token }),
-          "EX",
-          2700
-        );
-
-        return res
-          .status(200)
-          .json({ message: "Registered (dev auto-verified)", token, success: true });
-      }
-
-      // Generate token and hash password
-      const token = crypto.randomBytes(32).toString("hex");
+      // Direct registration without email verification
       const bcryptPassword = await bcryptjs.hash(personalInfo.password, 12);
       personalInfo.password = bcryptPassword;
-      //removing 'confirmPassword' from personalInfo
       delete personalInfo.confirmPassword;
-      // Save token and user data in the cryptoSchema
-      const saveCryptotoken = new cryptoSchema({
-        token,
-        personalInfo,
+
+      const counselorProfile = new CounselorProfileSchema({
         education,
         payment,
-        counseling,
         file: filePath,
-        role,
       });
-      await saveCryptotoken.save();
-      if (saveCryptotoken) {
-        // Send email with token
-        sendMail(personalInfo.email, token, "verify");
-        return res
-          .status(200)
-          .json({ message: "Check your Email!", success: true });
+      await counselorProfile.save();
+
+      const userDoc = new UserSchema({
+        personalInfo,
+        profile: "dummyImage.png",
+        role,
+        friends: [],
+        counselor: counselorProfile._id,
+      });
+      const savedUser = await userDoc.save();
+
+      if (counseling) {
+        const counselingDoc = new CreateCounselingSchema({
+          counselorId: savedUser._id,
+          category: counseling.category,
+          duration: counseling.duration,
+          price: counseling.price,
+        });
+        await counselingDoc.save();
+        savedUser.counseling = counselingDoc._id;
+        await savedUser.save();
       }
+
+      const token = jwt.sign(
+        {
+          name: personalInfo.name,
+          email: personalInfo.email,
+          userId: savedUser._id,
+          role,
+          isLoggedIn: true,
+        },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: 2700 }
+      );
+
+      await client.set(
+        token,
+        JSON.stringify({ userId: savedUser._id, userData: savedUser, token: token }),
+        "EX",
+        2700
+      );
+
+      return res
+        .status(200)
+        .json({ message: "Registered successfully", token, success: true });
     } else {
       // Check if the user already exists
       const user = await UserSchema.findOne({
@@ -203,63 +175,41 @@ exports.postRegister = async (req, res, next) => {
           .json({ message: "User already exist", success: false });
       }
 
-      if (isDev) {
-        const bcryptPassword = await bcryptjs.hash(personalInfo.password, 12);
-        personalInfo.password = bcryptPassword;
-        delete personalInfo.confirmPassword;
-
-        const saveUser = new UserSchema({
-          personalInfo,
-          role,
-          friends: [],
-          profile: "dummyImage.png",
-        });
-        const user = await saveUser.save();
-
-        const token = jwt.sign(
-          {
-            name: personalInfo.name,
-            email: personalInfo.email,
-            userId: user._id,
-            role,
-            isLoggedIn: true,
-          },
-          process.env.JWT_SECRET_KEY,
-          { expiresIn: 2700 }
-        );
-
-        await client.set(
-          token,
-          JSON.stringify({ userId: user._id, userData: user, token: token }),
-          "EX",
-          2700
-        );
-
-        return res
-          .status(200)
-          .json({ message: "Registered (dev auto-verified)", token, success: true });
-      }
-
-      // Generate token and hash password
-      const token = crypto.randomBytes(32).toString("hex");
+      // Direct registration without email verification
       const bcryptPassword = await bcryptjs.hash(personalInfo.password, 12);
       personalInfo.password = bcryptPassword;
-      //removing 'confirmPassword' from personalInfo
       delete personalInfo.confirmPassword;
-      // Save token and user data in the cryptoSchema
-      let saveCryptotoken = new cryptoSchema({
-        token,
+
+      const saveUser = new UserSchema({
         personalInfo,
         role,
+        friends: [],
+        profile: "dummyImage.png",
       });
-      await saveCryptotoken.save();
-      if (saveCryptotoken) {
-        // Send email with token
-        sendMail(personalInfo.email, token, "verify");
-        return res
-          .status(200)
-          .json({ message: "Check your Email!", success: true });
-      }
+      const savedUser = await saveUser.save();
+
+      const token = jwt.sign(
+        {
+          name: personalInfo.name,
+          email: personalInfo.email,
+          userId: savedUser._id,
+          role,
+          isLoggedIn: true,
+        },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: 2700 }
+      );
+
+      await client.set(
+        token,
+        JSON.stringify({ userId: savedUser._id, userData: savedUser, token: token }),
+        "EX",
+        2700
+      );
+
+      return res
+        .status(200)
+        .json({ message: "Registered successfully", token, success: true });
     }
   } catch (error) {
     console.error("Error in postRegister:", error);
