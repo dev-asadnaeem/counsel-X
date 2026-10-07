@@ -75,7 +75,6 @@ app.use(xss());
 app.use(cors(corsOptions));
 
 // Apply the rate limiting middleware to API calls only
-app.use("/api", limiter);
 
 // app.use(authentication)
 
