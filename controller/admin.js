@@ -226,7 +226,8 @@ exports.downloadBook = async (req, res) => {
     }
 
     // Set CORS explicitly
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+    const frontendUrl = process.env.FRONTEND_URL || req.headers.origin || "*";
+    res.setHeader("Access-Control-Allow-Origin", frontendUrl);
     res.setHeader("Access-Control-Allow-Credentials", "true");
 
     res.sendFile(filePath, {
