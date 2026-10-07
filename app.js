@@ -67,14 +67,10 @@ const socketCorsOptions = {
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
+app.set('trust proxy', 1); 
 app.use(mongoSanitize());
 app.use(xss());
 
-const limiter = rateLimit({
-  windowMs: 45 * 60 * 1000, // 45 minutes
-  max: 300, // Limit each IP to 300 requests per `window` (here, per 45 minutes)
-  message: "Too many requests from this IP, please try again after 45 minutes"
-});
 // CORS must come BEFORE rate-limiter so OPTIONS preflight is handled correctly
 app.use(cors(corsOptions));
 
